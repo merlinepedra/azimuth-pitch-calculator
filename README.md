@@ -87,7 +87,7 @@ Note: we use [EXIF] `GPSDateTime` not [EXIF] `CaptureTime` values for datetime b
 
 ### Format
 
-`python azimuth-calculator.py -c [CONNECTION TYPE] -o [CONNECTION ORDER] [INPUT PHOTO DIRECTORY] [OUTPUT PHOTO DIRECTORY]`
+`python azipu.py -c [CONNECTION TYPE] -o [CONNECTION ORDER] [INPUT PHOTO DIRECTORY] [OUTPUT PHOTO DIRECTORY]`
 
 ### Examples
 
@@ -127,4 +127,4 @@ We offer community support for all our software on our Campfire forum. [Ask a qu
 
 ## License
 
-Azimuth / Pitch Calculator is licensed under an [GNU AGPLv3 License](https://github.com/trek-view/geovideo-to-geoframes/blob/master/LICENSE.txt).
+Azimuth / Pitch Calculator is licensed under a [GNU AGPLv3 License](https://github.com/trek-view/geovideo-to-geoframes/blob/master/LICENSE.txt).
