@@ -127,4 +127,4 @@ We offer community support for all our software on our Campfire forum. [Ask a qu
 
 ## License
 
-Azimuth / Pitch Calculator is licensed under a [GNU AGPLv3 License](https://github.com/trek-view/geovideo-to-geoframes/blob/master/LICENSE.txt).
+Azimuth / Pitch Calculator is licensed under a [GNU AGPLv3 License](https://github.com/trek-view/azimuth-pitch-calculator/blob/master/LICENSE.txt).
