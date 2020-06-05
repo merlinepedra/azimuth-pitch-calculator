@@ -80,8 +80,8 @@ This software will work with most image formats. Whilst it is designed for 360 p
 	- time (capture time of image)
 	- filename
 * o: connection order
-	- ascending (e.g. 00:01 - 00:10 or Z.jpg > A.jpg)
-	- descending (e.g. 00:10 - 00:01 or A.jpg > Z.jpg)
+	- ascending (e.g. 00:01 - 00:10 or A.jpg > Z.jpg)
+	- descending (e.g. 00:10 - 00:01 or Z.jpg > A.jpg)
 
 Note: we use [EXIF] `GPSDateTime` not [EXIF] `CaptureTime` values for datetime because many 360 stitching tools rewrite `CaptureTime` as datetime of stiching process not the datetime the image was actually captured. This can cause issues when sorting by time (e.g. images might not be stiched in capture order). Therefore, `GPSDateTime` is more likely to represent the true time of capture.
 
