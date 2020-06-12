@@ -74,6 +74,20 @@ This software will work with most image formats. Whilst it is designed for 360 p
 
 ## Quick start guide
 
+### Installation
+
+The following Python packages need to be installed:
+* [PyExifTool](https://pypi.org/project/PyExifTool/)
+	`python -m pip install PyExifTool`
+* [Pandas](https://pandas.pydata.org/docs/)
+	`python -m pip install pandas`
+
+
+[exiftool](https://exiftool.org/) needs to be installed on the system.
+If used on Windows, download the stand-alone .exe executable. Rename the .exe file to `exiftool.exe`. Put the .exe file in the same folder as the `azipi.py` file
+
+The `.ExifTool_Config` ([.ExifTool_Config explanation](https://exiftool.org/faq.html#Q11)) needs be in the HOME directory (Mac, Linux) or in the same folder as the `azipi.py`file (Windows)
+
 ### Arguements
 
 * c: connection type
@@ -82,18 +96,29 @@ This software will work with most image formats. Whilst it is designed for 360 p
 * o: connection order
 	- ascending (e.g. 00:01 - 00:10 or A.jpg > Z.jpg)
 	- descending (e.g. 00:10 - 00:01 or Z.jpg > A.jpg)
+* d: discard: discard images that lack GPS or time tags and continue
+* e: exiftool-exec-path
+	- path to ExifTool executable (recommended on Windows if [exiftool.exe](https://exiftool.org/) is not in working directory)
+* input_directory: directory that contains a series of images
+* output_directory: directory to store the newly tagged images
 
 Note: we use [EXIF] `GPSDateTime` not [EXIF] `CaptureTime` values for datetime because many 360 stitching tools rewrite `CaptureTime` as datetime of stiching process not the datetime the image was actually captured. This can cause issues when sorting by time (e.g. images might not be stiched in capture order). Therefore, `GPSDateTime` is more likely to represent the true time of capture.
 
 ### Format
 
-`python azipu.py -c [CONNECTION TYPE] -o [CONNECTION ORDER] [INPUT PHOTO DIRECTORY] [OUTPUT PHOTO DIRECTORY]`
+`python azipu.py -c [CONNECTION TYPE] -o [CONNECTION ORDER] -d - e [PATH TO EXIFTOOLS] [INPUT PHOTO DIRECTORY] [OUTPUT PHOTO DIRECTORY]`
 
 ### Examples
 
 **Calculate azimuth and pitch by ordring photos in ascended time order (recommended)**
 
-`python azimuth-calculator.py -c time -o ascending my_360_photos/ my_updated_360_photos/`
+Mac, Linux:
+
+`python azimuth-calculator.py -c time -o ascending -d my_360_photos/ my_updated_360_photos/`
+
+Windows example:
+
+"C:\Program Files (x86)\Python37\python.exe" "C:\PATH TO Python file\azipi.py" -c time -o ascending -d -e "C:\PATH TO exiftool\exiftool.exe" "C:\PATH TO INPUT FOLDER\" "C:\PATH TO OUTPUT FOLDER\"
 
 This command is what 99% of people will need. It process the earliest capture to the latest capture (by time).
 

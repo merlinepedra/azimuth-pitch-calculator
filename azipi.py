@@ -117,7 +117,7 @@ def clean_up_new_files(OUTPUT_PHOTO_DIRECTORY, list_of_files):
     for image in list_of_files:
         image_head, image_name = ntpath.split(image)
         try:
-            os.rename(image, os.path.join(os.path.abspath(OUTPUT_PHOTO_DIRECTORY), image_name))
+            os.rename(image, os.path.join(os.path.abspath(OUTPUT_PHOTO_DIRECTORY), '{0}_calculated.{1}'.format(image_name.split('.')[0], image.split('.')[-1])))
             os.rename(os.path.join(os.path.abspath(image_head), '{0}_original'.format(image_name)), image)
         except PermissionError:
             print('Image {0} to move is still in use by Exiftools process. Waiting...'.format(image_name))
