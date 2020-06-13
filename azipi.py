@@ -154,7 +154,8 @@ def add_azimuth_pitch(args):
                 os.path.abspath(os.path.join(PATH.parent.resolve(), INPUT_PHOTO_DIRECTORY))))
             input('Press any key to continue')
             quit()
-
+    print('The following input folder will be used:\n{0}'.format(INPUT_PHOTO_DIRECTORY))
+    print('The following output folder will be used:\n{0}'.format(OUTPUT_PHOTO_DIRECTORY))
 
     #Often the exiftool.exe will not be in Windows's PATH
     if args.executable_path == 'No path specified':
