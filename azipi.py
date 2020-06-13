@@ -15,7 +15,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
-import exiftool
+from exiftool_custom import exiftool
 
 def calculate_initial_compass_bearing(pointA, pointB):
     '''
@@ -154,6 +154,7 @@ def add_azimuth_pitch(args):
                 os.path.abspath(os.path.join(PATH.parent.resolve(), INPUT_PHOTO_DIRECTORY))))
             input('Press any key to continue')
             quit()
+
     print('The following input folder will be used:\n{0}'.format(INPUT_PHOTO_DIRECTORY))
     print('The following output folder will be used:\n{0}'.format(OUTPUT_PHOTO_DIRECTORY))
 
