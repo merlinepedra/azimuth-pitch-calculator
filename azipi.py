@@ -243,7 +243,7 @@ def add_azimuth_pitch(args):
             et.execute(bytes('-CameraElevationAngle={0}'.format(row['PITCH']), 'utf-8'), bytes("{0}".format(row['IMAGE_NAME']), 'utf-8'))
             et.execute(bytes('-PosePitchDegrees={0}'.format(row['PITCH']), 'utf-8'), bytes("{0}".format(row['IMAGE_NAME']), 'utf-8'))
 
-    clean_up_new_files(OUTPUT_PHOTO_DIRECTORY, list_of_files)
+    clean_up_new_files(OUTPUT_PHOTO_DIRECTORY, [x for x in df_images['IMAGE_NAME']])
 
     input('\nMetadata successfully added to images.\n\nPress any key to quit')
     quit()
