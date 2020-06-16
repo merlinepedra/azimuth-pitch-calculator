@@ -27,23 +27,27 @@ Azimuth / Pitch Calculator is a simple Python script that calculates the azimuth
 
 ### The Details 
 
-For geotagged photos taken in a timelapse, it is possible to provide a fairly accurate estimate of the azimuth and pitch (see: limitations) because  timelapses are typically shot in ascending time order (00:00:00 > 00:00:05 > 00:00:10) at set intervals (e.g. one photo every 5 seconds). 
+For geotagged photos taken in a timelapse, it is possible to provide a fairly accurate estimate of the azimuth and pitch (see: limitations) because timelapses are typically shot in ascending time order (00:00:00 > 00:00:05 > 00:00:10) at set intervals (e.g. one photo every 5 seconds). 
 
 ![Calculating Pitch from series of geotagged photos](/readme-images/pitch-calculation.png)
 
-For pitch this is done by calculating the vertical angle between the altitude value of source and destination photo.
+For pitch this is done by calculating the vertical angle between the `GPSAltitude` value of source and destination photo.
 
 ![Calculating Azimuth from series of geotagged photos](/readme-images/photo-heading-calculation.png)
 
-For azimuth this is done by calculating the horizontal angle between the source photo (latitude/longitude) and the destination photo (latitude/longitude).
+For azimuth this is done by calculating the horizontal angle between the source photo (`GPSLatitude`/`GPSLongitude`) and the destination photo (`GPSLatitude`/`GPSLongitude`).
+
+using `distance_mtrs` and `time_sec` it is possible to calculate speed between two photos (speed = `distance_mtrs` / `time_sec`
 
 The azimuth and pitch value are then reported in the source photo image metadata fields using the following standard tags:
 
-* [EXIF] `GPSImgDirection` (azimuth)
-* [EXIF] `GPSPitch` (pitch)
-* [EXIF] `CameraElevationAngle` (pitch)
-* [XMP] `PoseHeadingDegrees` (azimuth)
-* [XMP] `PosePitchDegrees` (pitch)
+* [EXIF] `GPSImgDirection` (azimuth) (measure: degrees)
+* [EXIF] `GPSPitch` (pitch) (measure: degrees)
+* [EXIF] `GPSSpeed` (speed) (measure: km/h)
+* [EXIF] `GPSSpeedRef` (speed measurement, always `k` for km/h)
+* [EXIF] `CameraElevationAngle` (pitch) (measure: degrees)
+* [XMP] `PoseHeadingDegrees` (azimuth) (measure: degrees)
+* [XMP] `PosePitchDegrees` (pitch) (measure: degrees)
 
 _[Read more about EXIF and XMP standards here](https://github.com/trek-view/360-camera-metadata)._
 
@@ -53,7 +57,7 @@ This information is then embedded programmatically using [exiftool](https://exif
 exiftool -xmp:PosePitchDegrees="10.2" my_360_image.jpg
 ```
 
-### Limitations
+### Limitations / Considerations
 
 **Estimations**
 
@@ -62,6 +66,12 @@ Photos in our (Trek View) tours are generally less than 3m apart and our Trek Pa
 Note, this will not always be correct, for example, if camera turns 90 degrees between start and destination photo (e.g turning a corner). In such cases, using this software could result in photos facing the wrong direction and causing visual issues (e.g. facing a brick wall if turning 90 degrees around a city block). However, for our outdoor work this is rarely a problem and is considered acceptable.
 
 If you're shooting at a low frame rate, sharply changing direction, or holding your camera at different angles (e.g holding in your hand), Azimuth / Pitch Calculator will not be a good fit for you.
+
+**Discarded images**
+
+This script allows you to discard images that don't match a certain criteria (for example, you want to space them a minimum of 10 meters apart) and will lead to a larger level of inaccuracy for estimations.
+
+In cases where more images are discarded the source and destination photo used for calculations might therefore be very far apart, and thus less likely for the source photo to be facing the destination photo.
 
 **Final photo**
 
@@ -99,7 +109,7 @@ All images must be geotagged with the following values:
 * `GPSLatitude`
 * `GPSLongitude`
 * `GPSAltitude`
-* `GPSDateTime` OR (`GPSDateStamp` AND `GPSTimeStamp`)
+* `GPSDateTime` OR (`GPSDateStamp` AND `GPSTimeStamp`) OR `originalDateTime`
 
 If a photo does not contain this information, you will be presented with a warning, and will be forced to explicitly discard (`-d`) images.
 
@@ -110,8 +120,12 @@ This software will work with most image formats. Whilst it is designed for 360 p
 ### Command Line Arguments
 
 * c: connection type (optional: default is time)
-	- time (`GPSDateTime` of image)
+	- timegps (`GPSDateTime` of image)
+	- timecapture (`originalDateTime` of image)
 	- filename (optional: default is ascending)
+
+_A note on connection types. Generally you should join by time unless you have a specific use-case. Filename will join the photo to the next photo in ascending alphabetical order. We recommend using `timegps` ([EXIF] `GPSDateTime`) not `timecapture` ([EXIF] `originalDateTime`) unless you are absolutely sure `originalDateTime` is correct. Many 360 stitching tools rewrite `originalDateTime` as datetime of stitching process not the datetime the image was actually captured. This can cause issues when sorting by time (e.g. images might not be stitched in capture order). Therefore, `GPSDateTime` is more likely to represent the true time of capture._
+
 * o: connection order
 	- ascending (e.g. 00:01 - 00:10 or A.jpg > Z.jpg)
 	- descending (e.g. 00:10 - 00:01 or Z.jpg > A.jpg)
@@ -120,8 +134,6 @@ This software will work with most image formats. Whilst it is designed for 360 p
 	- path to ExifTool executable (recommended on Windows if [exiftool.exe](https://exiftool.org/) is not in working directory)
 * input_directory: directory that contains a series of images
 * output_directory: directory to store the newly tagged images
-
-Note: Azimuth / Pitch Calculator uses [EXIF] `GPSDateTime` not [EXIF] `CaptureTime` values for datetime because many 360 stitching tools rewrite `CaptureTime` as datetime of stitching process not the datetime the image was actually captured. This can cause issues when sorting by time (e.g. images might not be stitched in capture order). Therefore, `GPSDateTime` is more likely to represent the true time of capture.
 
 ### Format
 
@@ -140,13 +152,13 @@ However, you can also order by filename (`-c filename`) and/or descending order 
 _Mac/Linux_
 
 ```
-python azimuth-calculator.py -c time -o ascending -d INPUT_DIRECTORY OUTPUT_DIRECTORY
+python azimuth-calculator.py -c timegps -o ascending -d INPUT_DIRECTORY OUTPUT_DIRECTORY
 ```
 
 _Windows_
 
 ```
-python azimuth-calculator.py -c time -o ascending -d "INPUT_DIRECTORY" "OUTPUT_DIRECTORY"
+python azimuth-calculator.py -c timegps -o ascending -d "INPUT_DIRECTORY" "OUTPUT_DIRECTORY"
 ```
 
 ### Output
@@ -169,7 +181,7 @@ Output files saved to C:\Users\david\azimuth-pitch-calculator-master\OUTPUT
 Metadata successfully added to images.
 ```
 
-You will get a new photo file with appended meta data.
+You will get a new photo file with appended metadata.
 
 The new files will follow the naming convention: `[ORIGINAL FILENAME] _ calculated . [ORIGINAL FILE EXTENSION]`
 
@@ -179,8 +191,7 @@ For example, `INPUT/MULTISHOT_9698_000000.jpg` >> `OUTPUT/MULTISHOT_9698_000000_
 
 **I get the error Missing metadata key: GPSDateTime. How to continue?**
 
-You will receive the following error if one of your images contains no metadata and the `-d` argument is not included when running the script:
-
+You will receive the following error if one of your images contains no GPS metadata and the `-d` argument is not included when running the script:
 
 ```
 Missing metadata key: GPSDateTime
@@ -190,6 +201,26 @@ Consider using the "-d" option to discard images missing required metadata keys
 ```
 
 To fix, simply run the script with the `-d` argument included.
+
+**How can I check the metadata in the image?**
+
+You can use exiftool (which will already be installed) to check the metadata.
+
+This skeleton command will output all the metadata in the specified image:
+
+```
+exiftool -G -s -b -j -a -T [PATH OF IMAGE TO CHECK] > OUTPUT.json
+```
+
+It will give a complete JSON document. Here's a snippet of the output:
+
+```
+  "XMP:PoseHeadingDegrees": {
+    "id": "PoseHeadingDegrees",
+    "table": "XMP::GPano",
+    "val": 177.3467244748772
+  },
+```
 
 ## Support 
 
