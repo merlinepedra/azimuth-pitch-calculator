@@ -44,7 +44,7 @@ The azimuth and pitch value are then reported in the source photo image metadata
 * [EXIF] `GPSImgDirection` (azimuth) (measure: degrees)
 * [EXIF] `GPSPitch` (pitch) (measure: degrees)
 * [EXIF] `GPSSpeed` (speed) (measure: km/h)
-* [EXIF] `GPSSpeedRef` (speed measurement, always `k` for km/h)
+* [EXIF] `GPSSpeedRef` (speed measurement, always `K` for km/h)
 * [EXIF] `CameraElevationAngle` (pitch) (measure: degrees)
 * [XMP] `PoseHeadingDegrees` (azimuth) (measure: degrees)
 * [XMP] `PosePitchDegrees` (pitch) (measure: degrees)
@@ -119,7 +119,7 @@ This software will work with most image formats. Whilst it is designed for 360 p
 
 ### Command Line Arguments
 
-* c: connection type (optional: default is time)
+* c: connection type (optional: default is timegps)
 	- timegps (`GPSDateTime` of image)
 	- timecapture (`originalDateTime` of image)
 	- filename (optional: default is ascending)
