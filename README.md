@@ -57,6 +57,8 @@ This information is then embedded programmatically using [exiftool](https://exif
 exiftool -xmp:PosePitchDegrees="10.2" my_360_image.jpg
 ```
 
+If values already exist in image (e.g. camera already writes `PosePitchDegrees`), these values take precedent over calculation, and are used instead to populate other fields (e.g. `GPSPitch`), if required.
+
 ### Limitations / Considerations
 
 **Estimations**
@@ -228,4 +230,4 @@ We offer community support for all our software on our Campfire forum. [Ask a qu
 
 ## License
 
-Azimuth / Pitch Calculator is licensed under a [GNU AGPLv3 License](https://github.com/trek-view/azimuth-pitch-calculator/blob/master/LICENSE.txt).
+Azimuth / Pitch Calculator is licensed under a [GNU AGPLv3 License](/LICENSE.txt).
