@@ -13,9 +13,11 @@ import ntpath
 import time
 import os
 from pathlib import Path
+import datetime
 
 import pandas as pd
 from exiftool_custom import exiftool
+
 
 def calculate_initial_compass_bearing(pointA, pointB):
     '''
@@ -103,7 +105,10 @@ def parse_metadata(dfrow, keys, discard):
     values = []
     for key in keys:
         try:
-            values.append(filter_metadata(dict_metadata, key, discard))
+            val = filter_metadata(dict_metadata, key, discard)
+            if 'DateTime' in key and type(val) == str:
+                val = datetime.datetime.strptime(val, '%Y:%m:%d %H:%M:%SZ') if 'Z' in val else datetime.datetime.strptime(val, '%Y:%m:%d %H:%M:%S')
+            values.append(val)
         except KeyError:
             print('\n\nAn image was encountered that did not have the required metadata.')
             print('Image: {0}'.format(dfrow['IMAGE_NAME']))
@@ -112,6 +117,7 @@ def parse_metadata(dfrow, keys, discard):
             input('Press any key to quit')
             quit()
     return values
+
 
 def clean_up_new_files(OUTPUT_PHOTO_DIRECTORY, list_of_files):
     '''
@@ -145,7 +151,9 @@ def add_azimuth_pitch(args):
     #Process import parameters
     print('\nInitializing input parameters...\n')
 
-    CONNECTION_TYPE        = 'GPS_DATETIME' if args.connection_type in ['time', 'Time', 't', 'T'] else 'IMAGE_NAME' # 'GPS_DATETIME' for sorting on 'time' or 'IMAGE_NAME' for sorting on 'filename'
+    CONNECTION_TYPE        = 'GPS_DATETIME' \
+        if args.connection_type in ['timecapture', 'timegps'] \
+        else 'IMAGE_NAME' # 'GPS_DATETIME' for sorting on 'timecapture' and 'timegps' or 'IMAGE_NAME' for sorting on 'filename'
     CONNECTION_ORDER       = True  if args.connection_order in ['ascending', 'Ascending', 'a', 'A'] else False # True for sorting 'ascending' or False for sorting'decending'
     DISCARD                = True if args.discard == True else False
 
@@ -197,8 +205,12 @@ def add_azimuth_pitch(args):
     #Process images or files without metadata based on discard setting.
     print('Checking metadata tags of all images...')
     len_before_disc = len(df_images)
-    keys = ['Composite:GPSDateTime', 'Composite:GPSLatitude', 'Composite:GPSLongitude', 'Composite:GPSAltitude']
-    df_images[['GPS_DATETIME', 'LATITUDE', 'LONGITUDE', 'ALTITUDE']] = df_images.apply(lambda x: parse_metadata(x, keys, DISCARD), axis=1, result_type='expand')
+    keys = ['Composite:GPSLatitude', 'Composite:GPSLongitude', 'Composite:GPSAltitude']
+    if args.connection_type in ['timegps', 'filename']:
+        keys.append('Composite:GPSDateTime')
+    else:
+        keys.append('EXIF:DateTimeOriginal')
+    df_images[['LATITUDE', 'LONGITUDE', 'ALTITUDE', 'GPS_DATETIME']] = df_images.apply(lambda x: parse_metadata(x, keys, DISCARD), axis=1, result_type='expand')
 
     #remove discarded images.
     df_images.dropna(axis=0, how='any', inplace=True)
@@ -237,11 +249,33 @@ def add_azimuth_pitch(args):
     print('Writing metadata to EXIF & XMP tags of qualified images...\n')
     with exiftool.ExifTool() as et:
         for index, row in df_images.iterrows():
-            et.execute(bytes('-GPSPitch={0}'.format(row['PITCH']), 'utf-8'), bytes("{0}".format(row['IMAGE_NAME']), 'utf-8'))
-            et.execute(bytes('-PoseHeadingDegrees={0}'.format(row['AZIMUTH']), 'utf-8'), bytes("{0}".format(row['IMAGE_NAME']), 'utf-8'))
-            et.execute(bytes('-GPSImgDirection={0}'.format(row['AZIMUTH']), 'utf-8'), bytes("{0}".format(row['IMAGE_NAME']), 'utf-8'))
-            et.execute(bytes('-CameraElevationAngle={0}'.format(row['PITCH']), 'utf-8'), bytes("{0}".format(row['IMAGE_NAME']), 'utf-8'))
-            et.execute(bytes('-PosePitchDegrees={0}'.format(row['PITCH']), 'utf-8'), bytes("{0}".format(row['IMAGE_NAME']), 'utf-8'))
+            azimuth = row['AZIMUTH']
+            if row['METADATA'].get('XMP:PoseHeadingDegrees'):
+                azimuth = row['METADATA'].get('XMP:PoseHeadingDegrees')
+            if row['METADATA'].get('EXIF:GPSImgDirection'):
+                azimuth = row['METADATA'].get('EXIF:GPSImgDirection')
+            et.execute(bytes('-PoseHeadingDegrees={0}'.format(azimuth), 'utf-8'),
+                       bytes("{0}".format(row['IMAGE_NAME']), 'utf-8'))
+            et.execute(bytes('-GPSImgDirection={0}'.format(azimuth), 'utf-8'),
+                       bytes("{0}".format(row['IMAGE_NAME']), 'utf-8'))
+            pitch = row['PITCH']
+            if row['METADATA'].get('XMP:PosePitchDegrees'):
+                pitch = row['METADATA'].get('XMP:PosePitchDegrees')
+            if row['METADATA'].get('EXIF:CameraElevationAngle'):
+                pitch = row['METADATA'].get('EXIF:CameraElevationAngle')
+            if row['METADATA'].get('EXIF:GPSPitch'):
+                pitch = row['METADATA'].get('EXIF:GPSPitch')
+            et.execute(bytes('-GPSPitch={0}'.format(pitch), 'utf-8'), bytes("{0}".format(row['IMAGE_NAME']), 'utf-8'))
+            et.execute(bytes('-CameraElevationAngle={0}'.format(pitch), 'utf-8'), bytes("{0}".format(row['IMAGE_NAME']), 'utf-8'))
+            et.execute(bytes('-PosePitchDegrees={0}'.format(pitch), 'utf-8'), bytes("{0}".format(row['IMAGE_NAME']), 'utf-8'))
+
+            if row.get('GPS_DATETIME') and row.get('GPS_DATETIME_NEXT'):
+                delta_time = (row['GPS_DATETIME_NEXT'] - row['GPS_DATETIME']).total_seconds()
+                if delta_time == 0:
+                    continue
+                speed_km = row['DISTANCE'] * 3600 / (delta_time * 1000)
+                et.execute(bytes('-GPSSpeed={}'.format(speed_km), 'utf-8'), bytes("{0}".format(row['IMAGE_NAME']), 'utf-8'))
+                et.execute(bytes('-GPSSpeedRef=k', 'utf-8'), bytes("{0}".format(row['IMAGE_NAME']), 'utf-8'))
 
     clean_up_new_files(OUTPUT_PHOTO_DIRECTORY, [x for x in df_images['IMAGE_NAME']])
 
@@ -255,7 +289,8 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--connection-type', 
                         action='store', 
                         dest='connection_type',
-                        help='Connection Type: "time" (capture time of image) or "filename".')
+                        default="timegps",
+                        help='Connection Type: "timegps", "timecapture" or "filename".')
 
     parser.add_argument('-o', '--connection-order', 
                         action='store', 
